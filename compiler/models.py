@@ -5,6 +5,8 @@ import os
 from dotenv import load_dotenv
 import jwt
 import datetime
+import subprocess
+import time
 
 from .errors import *
 from .utils.chore import is_valid_email
@@ -19,7 +21,7 @@ JWT_MAX_TIMEDELTA = datetime.timedelta(minutes=30)
 if not JWT_SECRET_KEY:
     raise("Please create an Environment Variable named JWT_SECRET_KEY")
 
-# Create your models here.
+
 class User(models.Model):
     name = models.CharField(max_length=255)
     username = models.CharField(max_length=255)
@@ -29,7 +31,6 @@ class User(models.Model):
     def __str__(self) -> str:
         return self.username
 
-    
     @classmethod
     def create_user(cls :"User", name :str, username :str, email :str, password :str) -> Tuple[int, str, Optional["User"]]:
         if not all([name, username, email, password]):
@@ -77,7 +78,6 @@ class User(models.Model):
 
         return token
 
-
     def getUserFromJWT(token :str) -> Tuple[bool, str, Optional["User"]]:
         if not token:
             return (False, NoToken, None)
@@ -99,3 +99,113 @@ class User(models.Model):
             return (False, InvalidToken, None)
         except Exception as e:
             return (False, str(e), None)
+
+
+class CodeHandler():
+    def __init__(self, code :str, language :str) -> None:
+        if not all([code, language]):
+            return
+        if language not in ['cpp','java','python']:
+            return
+
+        self.__code = code
+        self.__language = language
+        self.__output = None
+        self.__error = None
+        self.__runtime = None
+        self.__suggestion = None
+        self.__user_input = None
+
+    def getCode(self) -> str:
+        return self.__code
+
+    def updateCode(self, code :str) -> bool:
+        if code:
+            self.__code = code
+            return True
+        return False
+
+    def getCode(self) -> str:
+        return self.__code
+
+    def updateCode(self, code :str) -> bool:
+        if code:
+            self.__code = code
+            return True
+        return False
+
+    def getLanguage(self) -> str:
+        return self.__language
+
+    def updateLanguage(self, language :str) -> bool:
+        if language in ['cpp','java','python']:
+            self.__language = language
+            return True
+        return False
+
+    def getOutput(self) -> str:
+        return self.__output
+
+    def getError(self) -> str:
+        return self.__error
+
+    def getRuntime(self) -> str:
+        return self.__runtime
+
+    def getSuggestion(self) -> str:
+        return self.__suggestion
+
+    def setUserInput(self, input :str):
+        self.__user_input = input
+
+    def execute(self) -> None:
+        try:
+            if self.__language == 'python':
+                filename = 'script.py'
+                with open(filename, 'w') as file:
+                    file.write(self.__code)
+                command = ['python', filename]
+
+            elif self.__language == 'cpp':
+                filename = 'program.cpp'
+                executable = 'program.out'
+                with open(filename, 'w') as file:
+                    file.write(self.__code)
+                compile_result = subprocess.run(['g++', filename, '-o', executable], capture_output=True, text=True)
+                if compile_result.returncode != 0:
+                    self.__error = compile_result.stderr
+                    return
+                command = ['./' + executable]
+
+            elif self.__language == 'java':
+                filename = 'Program.java'
+                with open(filename, 'w') as file:
+                    file.write(self.__code)
+                compile_result = subprocess.run(['javac', filename], capture_output=True, text=True)
+                if compile_result.returncode != 0:
+                    self.__error = compile_result.stderr
+                    return
+                command = ['java', 'Program']
+
+            else:
+                self.__error = "Unsupported language"
+                return
+
+            start_time = time.time()
+            
+            result = subprocess.run(
+                command,
+                input=self.__user_input,
+                capture_output=True,
+                text=True,
+                timeout=3  # We are giving the program to run in max 3 seconds
+            )
+            end_time = time.time()
+
+            self.__runtime = f"{end_time - start_time:.3f} seconds"
+            self.__output = result.stdout
+            self.__error = result.stderr
+        except subprocess.TimeoutExpired:
+            self.__error = "Time Limit Exceeded"
+        except Exception as e:
+            self.__error = str(e)     
