@@ -76,3 +76,26 @@ class User(models.Model):
         token = jwt.encode(payload, JWT_SECRET_KEY, algorithm='HS256')
 
         return token
+
+
+    def getUserFromJWT(token :str) -> Tuple[bool, str, Optional["User"]]:
+        if not token:
+            return (False, NoToken, None)
+            
+        try:
+            decoded_payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=['HS256'])
+
+            username = decoded_payload.get('username')
+            email = decoded_payload.get('email')
+
+            user = User.objects.filter(username=username).first() 
+            if user and user.email == email:
+                return (True, ValidToken, user)
+            return (False, UserNotExists, None)
+
+        except jwt.ExpiredSignatureError:
+            return (False, ExpiredToken, None)
+        except jwt.InvalidTokenError:
+            return (False, InvalidToken, None)
+        except Exception as e:
+            return (False, str(e), None)
