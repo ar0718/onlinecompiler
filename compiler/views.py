@@ -41,5 +41,21 @@ def signup(request):
 
 @api_view(['POST'])
 def login(request):
-    message = {"status_code": 200, "status_message": "login is up", "message": "logic is yet to be implemented"}
+    message = {"status": 404, "message": "nothing was performed."}
+
+    username = request.data.get("username")
+    password = request.data.get("password")
+
+    status, user = User.verify_user(username=username, password=password)
+
+    if status == False:
+        message["message"] = user
+        return Response(message)
+    else:
+        message["status"] = 200
+        message["message"] = UserSerializer(user).data
+
+    jwt_token = user.generateJWT()
+    message["jwt"] = jwt_token
+
     return Response(message)
