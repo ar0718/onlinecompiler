@@ -46,3 +46,20 @@ class User(models.Model):
         user.save()
 
         return(True, user)
+
+    def verify_user(username :str, password :str) -> Tuple[bool, Union["User", str]]:
+        if not all([username, password]):
+            return (False, IncompleteData)
+        
+        user = User.objects.filter(username=username).first()
+        if not user:
+            return (False, UserNotExists)
+
+        auth = verify_password(password=password, hashed_password=user.password_hash)
+
+        if auth:
+            return (True, user)
+        else:
+            return (False, InvalidCredentials)
+
+        return (False, BadResponse)
