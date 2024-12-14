@@ -1,6 +1,6 @@
 from django.db import models
 import bcrypt
-from typing import Tuple, Union
+from typing import Tuple, Optional
 import os
 from dotenv import load_dotenv
 import jwt
@@ -31,38 +31,38 @@ class User(models.Model):
 
     
     @classmethod
-    def create_user(cls :"User", name :str, username :str, email :str, password :str) -> Tuple[bool, Union["User", str]]:
+    def create_user(cls :"User", name :str, username :str, email :str, password :str) -> Tuple[int, str, Optional["User"]]:
         if not all([name, username, email, password]):
-            return (False, IncompleteData)
+            return (400, IncompleteData, None)
 
         if User.objects.filter(username=username).exists():
-            return (False, UserExists)
+            return (403, UserExists, None)
 
         if not is_valid_email(email):
-            return (False, InvalidEmail)
+            return (403, InvalidEmail, None)
 
         hashed_password = hash_password(password)
         user = cls(name=name, username=username, email=email, password_hash=hashed_password)
         user.save()
 
-        return(True, user)
+        return(200,UserCreated, user)
 
-    def verify_user(username :str, password :str) -> Tuple[bool, Union["User", str]]:
+    def verify_user(username :str, password :str) -> Tuple[bool, str, Optional["User"]]:
         if not all([username, password]):
-            return (False, IncompleteData)
+            return (400, IncompleteData, None)
         
         user = User.objects.filter(username=username).first()
         if not user:
-            return (False, UserNotExists)
+            return (404, UserNotExists, None)
 
         auth = verify_password(password=password, hashed_password=user.password_hash)
 
         if auth:
-            return (True, user)
+            return (200, LoggedIn, user)
         else:
-            return (False, InvalidCredentials)
+            return (401, InvalidCredentials, None)
 
-        return (False, BadResponse)
+        return (400, BadResponse, None)
 
     def generateJWT(self) -> str:
         expiration_time = datetime.datetime.utcnow() + JWT_MAX_TIMEDELTA

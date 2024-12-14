@@ -5,3 +5,6 @@ InvalidData = "provided data isn't valid"
 IncompleteData = "provided data isn't complete"
 InvalidEmail = "email is not valid"
 BadResponse = "something bad happened"
+
+UserCreated = "user created successfully"
+LoggedIn = "login successful"

@@ -25,14 +25,15 @@ def signup(request):
     email = request.data.get("email")
     password = request.data.get("password")
     
-    status, user = User.create_user(name=name, username=username, email=email, password=password)
+    status, response, user = User.create_user(name=name, username=username, email=email, password=password)
 
-    if status == False:
-        message["message"] = user
-        return Response(message)
+    message["status"] = status
+    message["message"] = response
+
+    if status == 200:
+        message["user"] = UserSerializer(user).data
     else:
-        message["status"] = 200
-        message["message"] = UserSerializer(user).data
+        return Response(message)
 
     jwt_token = user.generateJWT()
     message["jwt"] = jwt_token
@@ -46,14 +47,15 @@ def login(request):
     username = request.data.get("username")
     password = request.data.get("password")
 
-    status, user = User.verify_user(username=username, password=password)
+    status, response, user = User.verify_user(username=username, password=password)
 
-    if status == False:
-        message["message"] = user
-        return Response(message)
+    message["status"] = status
+    message["message"] = response
+
+    if status == 200:
+        message["user"] = UserSerializer(user).data
     else:
-        message["status"] = 200
-        message["message"] = UserSerializer(user).data
+        return Response(message)
 
     jwt_token = user.generateJWT()
     message["jwt"] = jwt_token
