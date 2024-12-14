@@ -7,6 +7,7 @@ __pycache__
 db.sqlite3
 media
 bin
+compiler/migrations
 # Backup files # 
 *.bak 
 

@@ -1,11 +1,18 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .serializers import UserSerializer
+from .models import User
 
 @api_view(['GET'])
 def Welcome(request):
     message = {"status_code": 200, "status_message": "api is up", "message": "Hello from AxG!"}
     return Response(message)
+
+@api_view(['GET'])
+def getUsers(request):
+    users = User.objects.all() 
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)
 
 @api_view(['POST'])
 def signup(request):
@@ -17,7 +24,6 @@ def signup(request):
         message["status"] = 403
         message["message"] = "User already exists."
 
-    
     if user.is_valid():
         user.save()
         message["status"] = 200
