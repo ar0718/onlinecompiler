@@ -1,7 +1,9 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
 from .serializers import UserSerializer
 from .models import User
+from .errors import *
 
 @api_view(['GET'])
 def Welcome(request):
@@ -16,24 +18,24 @@ def getUsers(request):
 
 @api_view(['POST'])
 def signup(request):
-    user = UserSerializer(data=request.data)
     message = {"status": 404, "message": "nothing was performed."}
 
+    name = request.data.get("name")
     username = request.data.get("username")
-    if User.objects.filter(username=username).exists():
-        message["status"] = 403
-        message["message"] = "User already exists."
-        return Response(message)
+    email = request.data.get("email")
+    password = request.data.get("password")
+    
+    status, user = User.create_user(name=name, username=username, email=email, password=password)
 
-    if user.is_valid():
-        user.save()
-        message["status"] = 200
-        message["message"] = f"account for {username} is created!"
+    if status == False:
+        message["message"] = user
         return Response(message)
     else:
-        message["status"] = 400
-        message["message"] = "Please provide valid data."
-        return Response(message)
+        message["status"] = 200
+        message["message"] = UserSerializer(user).data
+
+    jwt_token = user.generateJWT()
+    message["jwt"] = jwt_token
 
     return Response(message)
 
