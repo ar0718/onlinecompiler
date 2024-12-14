@@ -1,0 +1,7 @@
+UserNotExists = "user doesn't exists"
+UserExists = "user already exists"
+InvalidCredentials = "invalid credentials"
+InvalidData = "provided data isn't valid"
+IncompleteData = "provided data isn't complete"
+InvalidEmail = "email is not valid"
+BadResponse = "something bad happened"
