@@ -1,5 +1,6 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from .serializers import UserSerializer
 
 @api_view(['GET'])
 def Welcome(request):
@@ -8,7 +9,23 @@ def Welcome(request):
 
 @api_view(['POST'])
 def signup(request):
-    message = {"status_code": 200, "status_message": "signup is up", "message": "logic is yet to be implemented"}
+    user = UserSerializer(data=request.data)
+    message = {"status": 404, "message": "nothing was performed."}
+
+    username = request.data.get("username")
+    if User.objects.filter(username=username).exists():
+        message["status"] = 403
+        message["message"] = "User already exists."
+
+    
+    if user.is_valid():
+        user.save()
+        message["status"] = 200
+        message["message"] = f"account for {username} is created!"
+    else:
+        message["status"] = 400
+        message["message"] = "Please provide valid data."
+
     return Response(message)
 
 @api_view(['POST'])
