@@ -23,14 +23,17 @@ def signup(request):
     if User.objects.filter(username=username).exists():
         message["status"] = 403
         message["message"] = "User already exists."
+        return Response(message)
 
     if user.is_valid():
         user.save()
         message["status"] = 200
         message["message"] = f"account for {username} is created!"
+        return Response(message)
     else:
         message["status"] = 400
         message["message"] = "Please provide valid data."
+        return Response(message)
 
     return Response(message)
 
