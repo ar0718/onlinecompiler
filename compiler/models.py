@@ -63,3 +63,16 @@ class User(models.Model):
             return (False, InvalidCredentials)
 
         return (False, BadResponse)
+
+    def generateJWT(self) -> str:
+        expiration_time = datetime.datetime.utcnow() + JWT_MAX_TIMEDELTA
+
+        payload = {
+            'username': self.username,
+            'email': self.email,
+            'exp': expiration_time
+        }
+
+        token = jwt.encode(payload, JWT_SECRET_KEY, algorithm='HS256')
+
+        return token
