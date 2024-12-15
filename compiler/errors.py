@@ -6,6 +6,7 @@ InvalidData = "provided data isn't valid"
 IncompleteData = "provided data isn't complete"
 InvalidEmail = "email is not valid"
 BadResponse = "something bad happened"
+NoOperation = "nothing was performed"
 
 ## Positive Messages
 UserCreated = "user created successfully"
