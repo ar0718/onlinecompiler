@@ -280,13 +280,18 @@ class TestCase(models.Model):
 
     def testCode(self, code :CodeHandler) -> Tuple[bool, str]:
         code.setUserInput(self.input_data)
+        solve_count = self.problem.solve_count
         try:
             code.execute()
         except Exception as e:
             return (False, str(e))
         if code.getOutput() == self.expected_output:
+            tries = solve_count/self.problem.solve_percentage
+            self.problem.solve_percentage = (tries + 1)/(solve_count+1)
+            self.problem.solve_count = solve_count + 1
             return (True, "success")
         else:
+            self.problem.solve_count = solve_count + 1
             result = f"Input:\n{self.input_data};\n\nOutput:\n{code.getOutput()}\n\nExpected Output:\n{self.expected_output}"
             return (False, result)
 
