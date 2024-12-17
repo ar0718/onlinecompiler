@@ -11,6 +11,7 @@ NoOperation = "nothing was performed"
 ## Positive Messages
 UserCreated = "user created successfully"
 LoggedIn = "login successful"
+ProblemCreated = "problem created successfully"
 
 ## JWT related messages
 ExpiredToken = "JWT token has expired"

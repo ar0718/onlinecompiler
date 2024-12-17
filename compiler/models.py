@@ -1,6 +1,6 @@
 from django.db import models
 import bcrypt
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 import os
 from dotenv import load_dotenv
 import jwt
@@ -215,7 +215,6 @@ class Problem(models.Model):
     title = models.CharField(max_length=255)
     statement = models.TextField()
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='problems')
-    testcases = models.JSONField()
     solve_percentage = models.FloatField(default=0.0)
     solve_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -223,6 +222,33 @@ class Problem(models.Model):
 
     def __str__(self):
         return self.title 
+
+    def getProblemID(self) -> int:
+        return self.id
+
+    def getCreator(self) -> str:
+        return self.creator.username
+
+    def addTestCase(self, input_data: str, expected_output :str) -> bool:
+        if not all([input_data, expected_output]):
+            return False
+        test_case = TestCase(problem=self, input_data=input_data, expected_output=expected_output)
+        test_case.save()
+        return True
+
+    @classmethod
+    def createProblem(title: str, statement: str, creator: User, testcases: Dict[str,str]) -> Tuple[int, str]:
+        if not all([title, statement, User, testcases]):
+            return (400, IncompleteData)
+        
+        problem = cls(title=title, statement=statement, creator=creator)
+
+        for input_data, expected_output in testcases:
+            problem.addTestCase(input_data, expected_output)
+
+        problem.save()
+
+        return (200, ProblemCreated)
 
     def solve(self, code :CodeHandler) -> Tuple[bool, int, str]:
         passed_tests = 0
@@ -242,21 +268,17 @@ class TestCase(models.Model):
     input_data = models.TextField()
     expected_output = models.TextField()
 
-    def getInput(self) -> str:
-        return self.input_data
-
-    def setInput(self, test_input :str) -> None:
+    def setInput(self, test_input :str) -> bool:
         if not test_input:
-            return
+            return False
         self.input_data = test_input
+        return True
 
-    def getExcpectedOutput(self) -> str:
-        return self.expected_output
-
-    def setExcpectedOutput(self, output :str) -> None:
+    def setExcpectedOutput(self, output :str) -> bool:
         if not output:
-            return
+            return False
         self.expected_output = output
+        return True
 
     def testCode(self, code :CodeHandler) -> Tuple[bool, str]:
         code.setUserInput(self.input_data)
@@ -264,9 +286,9 @@ class TestCase(models.Model):
             code.execute()
         except Exception as e:
             return (False, str(e))
-        if code.getOutput() == self.getExcpectedOutput():
+        if code.getOutput() == self.expected_output:
             return (True, "success")
         else:
-            result = f"Input:\n{self.getInput()};\n\nOutput:\n{code.getOutput()}\n\nExpected Output:\n{self.getExcpectedOutput()}"
+            result = f"Input:\n{self.input_data};\n\nOutput:\n{code.getOutput()}\n\nExpected Output:\n{self.expected_output}"
             return (False, result)
 
