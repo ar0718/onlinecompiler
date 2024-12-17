@@ -117,3 +117,17 @@ def coderunner(request):
     message["runtime"] = code.getRuntime()
 
     return Response(message)
+
+@api_view(['POST'])
+def addproblem(request):
+    message={"status": 500, "message": NoOperation}
+    title = request.data.get("title")
+    statement = request.data.get("statement")
+    jwt = request.data.get("jwt")
+    testcases = request.data.get("testcases")
+    isValid, message["message"], creator= getUserFromJWT(jwt)
+    if (not is_valid):
+        return Response(message)
+    message["status"] = 200
+    message["status"],message["message"] = createProblem(title, statement, creator, testcases)
+    return Response(message)
