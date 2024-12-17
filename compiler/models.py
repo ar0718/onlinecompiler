@@ -286,8 +286,8 @@ class TestCase(models.Model):
         except Exception as e:
             return (False, str(e))
         if code.getOutput() == self.expected_output:
-            tries = solve_count/self.problem.solve_percentage
-            self.problem.solve_percentage = (tries + 1)/(solve_count+1)
+            #tries = solve_count/self.problem.solve_percentage
+            #self.problem.solve_percentage = (tries + 1)/(solve_count+1)
             self.problem.solve_count = solve_count + 1
             return (True, "success")
         else:
