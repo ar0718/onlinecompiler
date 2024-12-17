@@ -198,7 +198,7 @@ class CodeHandler():
                 input=self.__user_input,
                 capture_output=True,
                 text=True,
-                timeout=3  # We are giving the program to run in max 3 seconds
+                timeout=20  # We are giving the program to run in max 3 seconds
             )
             end_time = time.time()
 
@@ -208,10 +208,37 @@ class CodeHandler():
         except subprocess.TimeoutExpired:
             self.__error = "Time Limit Exceeded"
         except Exception as e:
-            self.__error = str(e)    
+            self.__error = str(e)   
+        #self.__error = completion.choices[0].message.parsed
+
+class Problem(models.Model):
+    title = models.CharField(max_length=255)
+    statement = models.TextField()
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='problems')
+    testcases = models.JSONField()
+    solve_percentage = models.FloatField(default=0.0)
+    solve_count = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title 
+
+    def solve(self, code :CodeHandler) -> Tuple[bool, int, str]:
+        passed_tests = 0
+        all_test_cases = self.test_cases.all()
+        isSucceed = True
+        message = NoOperation
+        for test in all_test_cases:
+            isSucceed, message = test.testCode(code)
+            if not isSucceed:
+                return (isSucceed, passed_tests, message)
+            passed_tests += 1
+        return (isSucceed, passed_tests, message)
+
 
 class TestCase(models.Model):
-    problem = models.ForeignKey(User, on_delete=models.CASCADE, related_name='test_cases')
+    problem = models.ForeignKey(Problem, on_delete=models.CASCADE, related_name='test_cases')
     input_data = models.TextField()
     expected_output = models.TextField()
 
@@ -231,7 +258,7 @@ class TestCase(models.Model):
             return
         self.expected_output = output
 
-    def testCode(code :CodeHandler) -> Tuple[bool, str]:
+    def testCode(self, code :CodeHandler) -> Tuple[bool, str]:
         code.setUserInput(self.input_data)
         try:
             code.execute()
@@ -243,27 +270,3 @@ class TestCase(models.Model):
             result = f"Input:\n{self.getInput()};\n\nOutput:\n{code.getOutput()}\n\nExpected Output:\n{self.getExcpectedOutput()}"
             return (False, result)
 
-class Problem(models.Model):
-    title = models.CharField(max_length=255)
-    statement = models.TextField()
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='problems')
-    testcases = models.JSONField()
-    solve_percentage = models.FloatField(default=0.0)
-    solve_count = models.IntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.title 
-
-    def solve(code :CodeHandler) -> Tuple[bool, int, str]:
-        passed_tests = 0
-        all_test_cases = self.test_cases.all()
-        isSucceed = True
-        message = NoOperation
-        for test in all_test_cases:
-            isSucceed, message = test.testCode(code)
-            if not isSucceed:
-                return (isSucceed, passed_tests, message)
-            passed_tests += 1
-        return (isSucceed, passed_tests, message)
