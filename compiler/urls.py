@@ -13,5 +13,5 @@ urlpatterns = [
     path('jwtdata/', views.decodeJWT, name='getJWTdata'),
     path('ide/', views.coderunner, name='code runner'),
     path('addproblem/', views.addproblem, name='add problem'),
-
+    path('testcode/', views.testcode, name='test your code'),
 ]

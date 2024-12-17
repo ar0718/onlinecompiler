@@ -142,3 +142,21 @@ def addproblem(request):
         return Response(message)
     message["status"],message["message"] = Problem.createProblem(statement=statement, creator=creator, testcases=testcases,title=title)
     return Response(message)
+
+@api_view(['POST'])
+def testcode(request):
+    message = {"status": 500, "message": NoOperation}
+    problem_id = request.data.get("problem_id")
+    problem = Problem.objects.filter("id"==problem_id).first
+    code = request.data.get("code")
+    jwt = request.data.get("jwt")
+    is_valid, message["message"], solver = User.getUserFromJWT(jwt)
+    if (not is_valid):
+        return Response(message)
+    isSucceed, passed_tests, message = problem.solve(code)
+    if (isSucceed):
+        message["message"]="passed_testcases: "+f"{passed_tests}"
+    else:
+        message["message"]="Sorry!! OVER FOR YOU"
+
+    return Response(message)
