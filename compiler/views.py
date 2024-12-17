@@ -1,8 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .serializers import UserSerializer
-from .models import User, CodeHandler
+from .serializers import UserSerializer, ProblemSerializer, TestCaseSerializer
+from .models import User, CodeHandler, Problem, TestCase
 from .errors import *
 
 ### Test Endpoints
@@ -16,6 +16,18 @@ def Welcome(request):
 def getUsers(request):
     users = User.objects.all() 
     serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def getProblems(request):
+    problems = Problem.objects.all() 
+    serializer = ProblemSerializer(problems, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def getTestcases(request):
+    testcases = TestCase.objects.all() 
+    serializer = TestCaseSerializer(testcases, many=True)
     return Response(serializer.data)
 
 @api_view(['POST'])
@@ -125,9 +137,8 @@ def addproblem(request):
     statement = request.data.get("statement")
     jwt = request.data.get("jwt")
     testcases = request.data.get("testcases")
-    isValid, message["message"], creator= getUserFromJWT(jwt)
+    is_valid, message["message"], creator= User.getUserFromJWT(jwt)
     if (not is_valid):
         return Response(message)
-    message["status"] = 200
-    message["status"],message["message"] = createProblem(title, statement, creator, testcases)
+    message["status"],message["message"] = Problem.createProblem(statement=statement, creator=creator, testcases=testcases,title=title)
     return Response(message)

@@ -237,16 +237,14 @@ class Problem(models.Model):
         return True
 
     @classmethod
-    def createProblem(title: str, statement: str, creator: User, testcases: Dict[str,str]) -> Tuple[int, str]:
+    def createProblem(cls, title: str, statement: str, creator: User, testcases: Dict[str,str]) -> Tuple[int, str]:
         if not all([title, statement, User, testcases]):
             return (400, IncompleteData)
         
         problem = cls(title=title, statement=statement, creator=creator)
-
-        for input_data, expected_output in testcases:
-            problem.addTestCase(input_data, expected_output)
-
         problem.save()
+        for input_data, expected_output in testcases.items():
+            problem.addTestCase(input_data, expected_output)
 
         return (200, ProblemCreated)
 

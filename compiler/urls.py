@@ -7,8 +7,11 @@ urlpatterns = [
 
     ## test endpoints
     path('', views.Welcome, name='root'),
-    path('users/', views.getUsers, name='users'),
+    path('gettestcases',views.getTestcases, name='testcases'),
+    path('getusers/', views.getUsers, name='users'),
+    path('getproblems/',views.getProblems, name='problems'),
     path('jwtdata/', views.decodeJWT, name='getJWTdata'),
     path('ide/', views.coderunner, name='code runner'),
-    path('addproblem', views.addproblem, name='add problem'),
+    path('addproblem/', views.addproblem, name='add problem'),
+
 ]
