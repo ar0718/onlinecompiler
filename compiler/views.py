@@ -147,16 +147,18 @@ def addproblem(request):
 def testcode(request):
     message = {"status": 500, "message": NoOperation}
     problem_id = request.data.get("problem_id")
-    problem = Problem.objects.filter("id"==problem_id).first
-    code = request.data.get("code")
+    problem = Problem.objects.filter(id=problem_id).first()
+    code_data = request.data.get("code")
+    language = request.data.get("language")
+    code = CodeHandler(code=code_data, language=language)
     jwt = request.data.get("jwt")
     is_valid, message["message"], solver = User.getUserFromJWT(jwt)
     if (not is_valid):
         return Response(message)
-    isSucceed, passed_tests, message = problem.solve(code)
+    isSucceed, passed_tests, message["message"] = problem.solve(code)
     if (isSucceed):
         message["message"]="passed_testcases: "+f"{passed_tests}"
     else:
-        message["message"]="Sorry!! OVER FOR YOU"
+        message["message"]=f"Sorry!! OVER FOR YOU, {passed_tests}"
 
     return Response(message)
