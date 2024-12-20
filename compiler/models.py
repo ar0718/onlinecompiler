@@ -150,45 +150,49 @@ class CodeHandler():
 
     def execute(self) -> None:
         try:
+            temp_dir = './temp_code'
+            os.makedirs(temp_dir, exist_ok=True)
             if self.__language == 'python':
-                filename = 'script.py'
+                filename = f'{temp_dir}/script.py'
                 with open(filename, 'w') as file:
                     file.write(self.__code)
-                command = ['python', filename]
+                docker_image = 'python:3.10'
+                command = f'python /code/script.py'
 
             elif self.__language == 'cpp':
-                filename = 'program.cpp'
-                executable = 'program.out'
+                filename = f'{temp_dir}/program.cpp'
                 with open(filename, 'w') as file:
                     file.write(self.__code)
-                compile_result = subprocess.run(['g++', filename, '-o', executable], capture_output=True, text=True)
-                if compile_result.returncode != 0:
-                    self.__error = compile_result.stderr
-                    return
-                command = ['./' + executable]
+                docker_image = 'gcc:latest'
+                command = f'g++ /code/program.cpp -o /code/program.out && /code/program.out'
 
             elif self.__language == 'java':
-                filename = 'Program.java'
+                filename = f'{temp_dir}/Program.java'
                 with open(filename, 'w') as file:
                     file.write(self.__code)
-                compile_result = subprocess.run(['javac', filename], capture_output=True, text=True)
-                if compile_result.returncode != 0:
-                    self.__error = compile_result.stderr
-                    return
-                command = ['java', 'Program']
+                docker_image = 'openjdk:latest'
+                command = f'javac /code/Program.java && java -cp /code Program'
 
             else:
                 self.__error = "Unsupported language"
                 return
 
+            docker_command = [
+                'docker', 'run', '--rm', '-i',
+                '--cpus', '1', '--memory', '128m', '--memory-swap', '128m',
+                '-v', f'{os.path.abspath(temp_dir)}:/code',
+                '-w', '/code',
+                docker_image,
+                'sh', '-c', command
+            ]
+
             start_time = time.time()
-            
             result = subprocess.run(
-                command,
+                docker_command,
                 input=self.__user_input,
                 capture_output=True,
                 text=True,
-                timeout=3  # We are giving the program to run in max 3 seconds
+                timeout=3  # Timeout for the Docker container
             )
             end_time = time.time()
 
@@ -197,6 +201,11 @@ class CodeHandler():
             self.__error = result.stderr
         except subprocess.TimeoutExpired:
             self.__error = "Time Limit Exceeded"
+        except subprocess.CalledProcessError as e:
+            if "memory" in str(e):
+                self.__error = "Memory Limit Exceeded"
+            else:
+                self.__error = str(e)
         except Exception as e:
             self.__error = str(e)   
 
