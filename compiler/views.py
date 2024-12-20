@@ -165,9 +165,8 @@ def testcode(request):
     isSucceed, passed_tests, message["message"] = problem.solve(code, firstSubmission)
     if (isSucceed):
         message["message"]="passed_testcases: "+f"{passed_tests}"
-        if firstSubmission:
-            solution = Solution(code=code_data,solver=solver,problem=problem)
-            solution.save()
+        solution = Solution(code=code_data,solver=solver,problem=problem)
+        solution.save()
     else:
         message["message"]=f"Sorry!! OVER FOR YOU, {passed_tests}   "+message["message"]
 
