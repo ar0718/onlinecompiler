@@ -29,10 +29,10 @@ class User(models.Model):
     password_hash = models.CharField(max_length=255)
  
     def __str__(self) -> str:
-        return self.username
+        return str(self.username)
 
     @classmethod
-    def create_user(cls :"User", name :str, username :str, email :str, password :str) -> Tuple[int, str, Optional["User"]]:
+    def create_user(cls, name :str, username :str, email :str, password :str) -> Tuple[int, str, Optional["User"]]:
         if not all([name, username, email, password]):
             return (400, IncompleteData, None)
 
@@ -48,11 +48,12 @@ class User(models.Model):
 
         return(200,UserCreated, user)
 
-    def verify_user(username :str, password :str) -> Tuple[bool, str, Optional["User"]]:
-        if not all([username, password]):
+    @classmethod
+    def verify_user(cls, uname :str, password :str) -> Tuple[int, str, Optional["User"]]:
+        if not all([uname, password]):
             return (400, IncompleteData, None)
         
-        user = User.objects.filter(username=username).first()
+        user = cls.objects.filter(username=uname).first()
         if not user:
             return (404, UserNotExists, None)
 
@@ -62,8 +63,6 @@ class User(models.Model):
             return (200, LoggedIn, user)
         else:
             return (401, InvalidCredentials, None)
-
-        return (400, BadResponse, None)
 
     def generateJWT(self) -> str:
         expiration_time = datetime.datetime.utcnow() + JWT_MAX_TIMEDELTA
@@ -99,7 +98,7 @@ class User(models.Model):
             return (False, InvalidToken, None)
         except Exception as e:
             return (False, str(e), None)
-
+        
 
 class CodeHandler():
     def __init__(self, code :str, language :str) -> None:
@@ -125,15 +124,6 @@ class CodeHandler():
             return True
         return False
 
-    def getCode(self) -> str:
-        return self.__code
-
-    def updateCode(self, code :str) -> bool:
-        if code:
-            self.__code = code
-            return True
-        return False
-
     def getLanguage(self) -> str:
         return self.__language
 
@@ -143,16 +133,16 @@ class CodeHandler():
             return True
         return False
 
-    def getOutput(self) -> str:
+    def getOutput(self) -> Optional[str]:
         return self.__output
 
-    def getError(self) -> str:
+    def getError(self) -> Optional[str]:
         return self.__error
 
-    def getRuntime(self) -> str:
+    def getRuntime(self) -> Optional[str]:
         return self.__runtime
 
-    def getSuggestion(self) -> str:
+    def getSuggestion(self) -> Optional[str]:
         return self.__suggestion
 
     def setUserInput(self, input :str):
@@ -198,7 +188,7 @@ class CodeHandler():
                 input=self.__user_input,
                 capture_output=True,
                 text=True,
-                timeout=20  # We are giving the program to run in max 3 seconds
+                timeout=3  # We are giving the program to run in max 3 seconds
             )
             end_time = time.time()
 
@@ -215,13 +205,10 @@ class Problem(models.Model):
     title = models.CharField(max_length=255)
     statement = models.TextField()
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='problems')
-    solve_percentage = models.FloatField(default=0.0)
+    try_count = models.IntegerField(default=0)
     solve_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.title 
 
     def getProblemID(self) -> int:
         return self.id
@@ -233,6 +220,8 @@ class Problem(models.Model):
         if not all([input_data, expected_output]):
             return False
         test_case = TestCase(problem=self, input_data=input_data, expected_output=expected_output)
+        self.testcase_count += 1
+        self.save()
         test_case.save()
         return True
 
@@ -252,12 +241,16 @@ class Problem(models.Model):
         passed_tests = 0
         all_test_cases = self.test_cases.all()
         isSucceed = True
+        self.try_count += 1
+        self.save()
         message = NoOperation
         for test in all_test_cases:
             isSucceed, message = test.testCode(code)
             if not isSucceed:
                 return (isSucceed, passed_tests, message)
             passed_tests += 1
+        self.solve_count += 1
+        self.save()
         return (isSucceed, passed_tests, message)
 
 
@@ -280,18 +273,13 @@ class TestCase(models.Model):
 
     def testCode(self, code :CodeHandler) -> Tuple[bool, str]:
         code.setUserInput(self.input_data)
-        solve_count = self.problem.solve_count
         try:
             code.execute()
         except Exception as e:
             return (False, str(e))
         if code.getOutput() == self.expected_output:
-            #tries = solve_count/self.problem.solve_percentage
-            #self.problem.solve_percentage = (tries + 1)/(solve_count+1)
-            self.problem.solve_count = solve_count + 1
             return (True, "success")
         else:
-            self.problem.solve_count = solve_count + 1
             result = f"Input:\n{self.input_data};\n\nOutput:\n{code.getOutput()}\n\nExpected Output:\n{self.expected_output}"
             return (False, result)
 

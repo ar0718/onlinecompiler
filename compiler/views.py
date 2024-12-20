@@ -82,7 +82,7 @@ def login(request):
     username = request.data.get("username")
     password = request.data.get("password")
 
-    status, response, user = User.verify_user(username=username, password=password)
+    status, response, user = User.verify_user(uname=username, password=password)
 
     message["status"] = status
     message["message"] = response
