@@ -236,20 +236,22 @@ class Problem(models.Model):
 
         return (200, ProblemCreated)
 
-    def solve(self, code :CodeHandler) -> Tuple[bool, int, str]:
+    def solve(self, code :CodeHandler, firstSubmission: bool) -> Tuple[bool, int, str]:
         passed_tests = 0
         all_test_cases = self.test_cases.all()
         isSucceed = True
-        self.try_count += 1
-        self.save()
+        if firstSubmission:
+            self.try_count += 1
+            self.save()
         message = NoOperation
         for test in all_test_cases:
             isSucceed, message = test.testCode(code)
             if not isSucceed:
                 return (isSucceed, passed_tests, message)
             passed_tests += 1
-        self.solve_count += 1
-        self.save()
+        if firstSubmission:
+            self.solve_count += 1
+            self.save()
         return (isSucceed, passed_tests, message)
 
 class Solution(models.Model):

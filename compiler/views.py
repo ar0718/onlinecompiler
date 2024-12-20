@@ -159,13 +159,15 @@ def testcode(request):
     code = CodeHandler(code=code_data, language=language)
     jwt = request.data.get("jwt")
     is_valid, message["message"], solver = User.getUserFromJWT(jwt)
+    firstSubmission = not solver.solutions.filter(problem=problem).exists()
     if (not is_valid):
         return Response(message)
-    isSucceed, passed_tests, message["message"] = problem.solve(code)
+    isSucceed, passed_tests, message["message"] = problem.solve(code, firstSubmission)
     if (isSucceed):
         message["message"]="passed_testcases: "+f"{passed_tests}"
-        solution = Solution(code=code_data,solver=solver,problem=problem)
-        solution.save()
+        if firstSubmission:
+            solution = Solution(code=code_data,solver=solver,problem=problem)
+            solution.save()
     else:
         message["message"]=f"Sorry!! OVER FOR YOU, {passed_tests}   "+message["message"]
 
