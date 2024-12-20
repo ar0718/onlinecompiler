@@ -1,8 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .serializers import UserSerializer, ProblemSerializer, TestCaseSerializer
-from .models import User, CodeHandler, Problem, TestCase
+from .serializers import UserSerializer, ProblemSerializer, TestCaseSerializer, SolutionSerializer
+from .models import Solution, User, CodeHandler, Problem, TestCase, Solution
 from .errors import *
 
 ### Test Endpoints
@@ -28,6 +28,12 @@ def getProblems(request):
 def getTestcases(request):
     testcases = TestCase.objects.all() 
     serializer = TestCaseSerializer(testcases, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def getSolutions(request):
+    solutions = Solution.objects.all() 
+    serializer = SolutionSerializer(solutions, many=True)
     return Response(serializer.data)
 
 @api_view(['POST'])
@@ -158,6 +164,8 @@ def testcode(request):
     isSucceed, passed_tests, message["message"] = problem.solve(code)
     if (isSucceed):
         message["message"]="passed_testcases: "+f"{passed_tests}"
+        solution = Solution(code=code_data,solver=solver,problem=problem)
+        solution.save()
     else:
         message["message"]=f"Sorry!! OVER FOR YOU, {passed_tests}   "+message["message"]
 

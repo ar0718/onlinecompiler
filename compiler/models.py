@@ -199,7 +199,6 @@ class CodeHandler():
             self.__error = "Time Limit Exceeded"
         except Exception as e:
             self.__error = str(e)   
-        #self.__error = completion.choices[0].message.parsed
 
 class Problem(models.Model):
     title = models.CharField(max_length=255)
@@ -253,7 +252,11 @@ class Problem(models.Model):
         self.save()
         return (isSucceed, passed_tests, message)
 
-
+class Solution(models.Model):
+    code = models.TextField()
+    solver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='solutions')
+    problem = models.ForeignKey(Problem, on_delete=models.CASCADE, related_name='solutions')
+    
 class TestCase(models.Model):
     problem = models.ForeignKey(Problem, on_delete=models.CASCADE, related_name='test_cases')
     input_data = models.TextField()
